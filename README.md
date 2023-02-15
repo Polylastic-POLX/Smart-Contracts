@@ -1,2 +1,2 @@
 # Smart-Contracts
-All Polylastic smartcontracts. 
+All Polylastic smart contracts. 
