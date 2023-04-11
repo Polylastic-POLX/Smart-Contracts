@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.10;
+pragma solidity 0.8.10;
 
 /// @title an extension that allows you to stop the operation of functions
 abstract contract ExtensionPause {
@@ -25,7 +25,7 @@ abstract contract ExtensionPause {
     }
 
     /// @notice returns the pause state
-    /// @return status true - means that the operation of functions using the "suspended" modifier is stopped
+    /// @return status true - means that the operation of functions using the "isPause" modifier is stopped
     /// * false- means that the functions using the "isPause" modifier are working
     function _statusPause() internal view returns (bool status) {
         return (_pause);

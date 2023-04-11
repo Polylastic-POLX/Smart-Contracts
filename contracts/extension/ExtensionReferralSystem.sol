@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.10;
+pragma solidity 0.8.10;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /// @title extension to connect the referral system to any contract
 
 abstract contract ExtensionReferralSystem {
+    event SetPercentReward(uint256[] percentReward);
+
     using SafeERC20 for IERC20;
     uint256 constant PRECISION = 1e6;
 
@@ -19,20 +21,15 @@ abstract contract ExtensionReferralSystem {
     /// @param percentReward the data must be specified taking into account the precission
     /// * the amount of data inside the array is equal to the number of levels
     /// * example [10000000, 5000000] equal first level =10%, second level = 5%
-    function _setPercentReward(uint256[] memory percentReward)
-        internal
-        virtual
-    {
+    function _setPercentReward(
+        uint256[] memory percentReward
+    ) internal virtual {
         delete (_percentReward);
         uint256 level = percentReward.length;
         for (uint256 i; i < level; i++) {
             _percentReward.push(percentReward[i]);
         }
-    }
-
-    /// @notice set the default referrer
-    function _setOwner(address owner) internal virtual {
-        _owner = owner;
+        emit SetPercentReward(percentReward);
     }
 
     /// @notice set the referrer
@@ -56,9 +53,7 @@ abstract contract ExtensionReferralSystem {
         address newReferral = referral;
 
         for (uint256 i; i < level; i++) {
-            newReferral = mapReferrer[newReferral] != address(0)
-                ? mapReferrer[newReferral]
-                : _owner;
+            newReferral = mapReferrer[newReferral];
             if (newReferral != address(0)) {
                 uint256 value = _calcPercent(amount, _percentReward[i]);
                 _send(newReferral, value, token);
@@ -75,12 +70,10 @@ abstract contract ExtensionReferralSystem {
         IERC20(token).safeTransfer(account, value);
     }
 
-    function _calcPercent(uint256 value, uint256 percent)
-        internal
-        pure
-        virtual
-        returns (uint256 res)
-    {
+    function _calcPercent(
+        uint256 value,
+        uint256 percent
+    ) internal pure virtual returns (uint256 res) {
         return ((percent * value) / (100 * PRECISION));
     }
 
@@ -93,12 +86,9 @@ abstract contract ExtensionReferralSystem {
         return (_percentReward, _owner);
     }
 
-    function getReferrer(address referral)
-        external
-        view
-        virtual
-        returns (address referrer)
-    {
+    function getReferrer(
+        address referral
+    ) external view virtual returns (address referrer) {
         return mapReferrer[referral];
     }
 }

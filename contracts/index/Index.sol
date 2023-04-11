@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.10;
+pragma solidity 0.8.10;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -54,14 +54,13 @@ abstract contract Index is
 
     Asset[] private _activeAssets;
 
-    constructor() {}
-
     modifier isZeroAmount(uint256 amount) {
         if (amount <= 0) {
             revert ZeroAmount();
         }
         _;
     }
+
     /// @notice The modifier prevents the possibility of reuse
     modifier isInitializer() {
         if (_initializer == true) {
@@ -119,10 +118,9 @@ abstract contract Index is
      * @notice Sets the new address of the token. Used to pay for the index
      * changes will take effect after rebalancing
      */
-    function setActualToken(address newToken)
-        external
-        onlyRole(DAO_ADMIN_ROLE)
-    {
+    function setActualToken(
+        address newToken
+    ) external onlyRole(DAO_ADMIN_ROLE) {
         require(newToken != address(0), "Invalid Token");
         _newAcceptToken = newToken;
         emit SetActualToken(newToken);
@@ -147,10 +145,10 @@ abstract contract Index is
      * @param path - Specify the path to exchange "_actualAcceptToken" to "_newAcceptToken".
      * The exchange will take place on quickSwap
      */
-    function rebalance(AssetData[] memory newAssets, address[] memory path)
-        external
-        onlyRole(ADMIN_ROLE)
-    {
+    function rebalance(
+        AssetData[] memory newAssets,
+        address[] memory path
+    ) external onlyRole(ADMIN_ROLE) {
         require(
             block.timestamp > _lastRebalance + _rebalancePeriod,
             "It is not possible to rebalance"
@@ -175,51 +173,40 @@ abstract contract Index is
      * @notice Buying an index
      * @param amountLP - The number of indexes that will be purchased
      * @param amountUSD - Number of tokens spent
-     * @param slippage - The percentage for which we can spend more "amountUSD".
-     * Required due to the variability of the sexes on DEX.
-     * In case of exceeding "amountUSD" + "slippage", the transaction is canceled
      */
     function stake(
         uint256 amountLP,
-        uint256 amountUSD,
-        uint256 slippage
-    ) external isZeroAmount(amountLP) isPause {
-        uint256 cost = _calcCost(amountLP); // calculating the cost of LP
-        require(cost != 0, "Not initialized index");
-
-        _isValidStake(cost, amountUSD, slippage);
-
+        uint256 amountUSD
+    )
+        external
+        // uint256 slippage
+        isZeroAmount(amountLP)
+        isPause
+    {
         // debiting tokens from the user to the contract
         IERC20(_actualAcceptToken).safeTransferFrom(
             msg.sender,
             address(this),
-            cost
+            amountUSD
         );
 
-        _stake(amountLP, cost);
+        _stake(amountLP, amountUSD);
     }
 
     /**
      * @notice Buying an index for ETH
      * @param amountLP The number of indexes that will be purchased
      */
-    function stakeETH(uint256 amountLP)
-        external
-        payable
-        isZeroAmount(amountLP)
-        isPause
-        nonReentrant
-    {
-        uint256 cost = _calcCost(amountLP);
-
-        require(cost <= msg.value, "Insufficient provision");
+    function stakeETH(
+        uint256 amountLP
+    ) external payable isZeroAmount(amountLP) isPause nonReentrant {
         require(
             _actualAcceptToken == _wETH,
             "The current accepted token is not ETH"
         );
         IWETH(_wETH).deposit{value: msg.value}();
 
-        _stake(amountLP, cost);
+        _stake(amountLP, msg.value);
     }
 
     /**
@@ -234,9 +221,9 @@ abstract contract Index is
         _unstake(amountLPWithoutTax);
 
         IndexLP(_indexLP).burn(msg.sender, amountLP); // burning LP
-        IndexLP(_indexLP).mint(_treasure, tax); // sending the tax to the treasure
+        IndexLP(_indexLP).mint(_treasure, tax); // mint the tax to the treasure
 
-        emit Unstake(msg.sender, amountLPWithoutTax);
+        emit Unstake(msg.sender, amountLP);
     }
 
     /// @notice Returns the pause state
@@ -303,11 +290,9 @@ abstract contract Index is
     /**
      * @notice Returns the LP price
      */
-    function getCostLP(uint256 amountLP)
-        external
-        view
-        returns (uint256 amountUSD)
-    {
+    function getCostLP(
+        uint256 amountLP
+    ) external view returns (uint256 amountUSD) {
         return _calcCost(amountLP);
     }
 
@@ -333,6 +318,10 @@ abstract contract Index is
         return (_actualAcceptToken, _newAcceptToken);
     }
 
+    function getTax() external view returns (uint256 tax) {
+        return _amountTax;
+    }
+
     /**
      * @notice Returns the number of assets in the rebalancing queue
      */
@@ -343,13 +332,9 @@ abstract contract Index is
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override
-        returns (bool)
-    {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override returns (bool) {
         return
             interfaceId == type(IIndex).interfaceId ||
             super.supportsInterface(interfaceId);
@@ -361,19 +346,6 @@ abstract contract Index is
         _rebalancePeriod = period;
 
         emit SetRebalancePeriod(period);
-    }
-
-    function _buyNewAssets(Asset[] memory newAssets, uint256 usdAmount)
-        internal
-    {
-        uint256 len = newAssets.length;
-        for (uint256 i; i < len; i++) {
-            uint256 amountForSwap = _calcShare(newAssets[i].share, usdAmount);
-
-            uint256 amount = _swapDEX(amountForSwap, newAssets[i].path);
-            // fixedAmount = amount/ totalLP;
-            _activeAssets[i].totalAmount += amount;
-        }
     }
 
     ///@notice initialization of the main parameters
@@ -420,7 +392,7 @@ abstract contract Index is
         emit Initialize(adminDAO, admin, acceptToken, _indexLP);
     }
 
-    function _stake(uint256 amountLP, uint256 cost) internal {
+    function _stake(uint256 amountLP, uint256 deposit) internal {
         (uint256 amountLPWithoutTax, uint256 tax) = _taxation(
             amountLP,
             _feeStake
@@ -428,25 +400,34 @@ abstract contract Index is
         _amountTax += tax;
 
         uint256 stakeCost = _calcStake(amountLP);
-        require(cost >= stakeCost, "invalidCost");
+        require(deposit >= stakeCost, "invalidCost");
         _ipartnerProgram.distributeTheReward(msg.sender, amountLP, _indexLP);
+
         IndexLP(_indexLP).mint(msg.sender, amountLPWithoutTax);
         IndexLP(_indexLP).mint(_treasure, tax);
 
-        emit Stake(msg.sender, cost, amountLPWithoutTax);
+        uint256 refundAmount = deposit - stakeCost;
+        // refund of excess funds
+        if (_actualAcceptToken != _wETH) {
+            IERC20(_actualAcceptToken).safeTransfer(msg.sender, refundAmount);
+        } else {
+            IWETH(_wETH).withdraw(refundAmount);
+        }
+
+        emit Stake(msg.sender, stakeCost, amountLPWithoutTax);
     }
 
-    function _swapDEX(uint256 amountForSwap, address[] memory path)
-        internal
-        returns (uint256 amount)
-    {
+    function _swapDEX(
+        uint256 amountForSwap,
+        address[] memory path
+    ) internal returns (uint256 amount) {
         uint256[] memory amounts = IUniswapV2Router02(_adapter)
             .swapExactTokensForTokens(
                 amountForSwap,
                 0,
                 path,
                 address(this),
-                block.timestamp + 300
+                block.timestamp
             );
         return amounts[path.length - 1];
     }
@@ -462,7 +443,7 @@ abstract contract Index is
                 amountInMax,
                 path,
                 address(this),
-                block.timestamp + 300
+                block.timestamp
             );
         return (amounts[path.length - 1], amounts[0]);
     }
@@ -502,10 +483,10 @@ abstract contract Index is
         _newAssets.remove(asset);
     }
 
-    function _changeActualToken(uint256 amount, address[] memory path)
-        internal
-        returns (uint256 amountActualAcceptToken)
-    {
+    function _changeActualToken(
+        uint256 amount,
+        address[] memory path
+    ) internal returns (uint256 amountActualAcceptToken) {
         amountActualAcceptToken = _swapDEX(amount, path);
         _actualAcceptToken = _newAcceptToken;
         _approveDEX(_actualAcceptToken);
@@ -560,10 +541,7 @@ abstract contract Index is
             uint256 amountForSwap = (amountLP * _activeAssets[i].fixedAmount) /
                 PRECISION;
 
-            uint256 total;
-            uint256 amountUSD;
-
-            (total, amountUSD) = _swapStake(
+            (uint256 total, uint256 amountUSD) = _swapStake(
                 amountForSwap,
                 type(uint256).max,
                 _activeAssets[i].path
@@ -579,25 +557,11 @@ abstract contract Index is
         }
     }
 
-    function _exchangeDEX(address[] memory path, uint256 amountAsset)
-        internal
-        returns (uint256 assetAmount)
-    {
-        uint256[] memory amountsIn = IUniswapV2Router02(_adapter).getAmountsIn(
-            amountAsset,
-            path
-        );
-
-        uint256 amount = _swapDEX(amountsIn[0], path);
-
-        return (amount);
-    }
-
     /// @notice we exchange USD for assets included in the index
-    function _rebalance(AssetData[] memory newAssets, uint256 usdAmount)
-        internal
-        virtual
-    {
+    function _rebalance(
+        AssetData[] memory newAssets,
+        uint256 usdAmount
+    ) internal virtual {
         _clearActiveAssets(); // clearing the array of active assets
         uint256 totalLP = IERC20(_indexLP).totalSupply();
         uint256 len = newAssets.length;
@@ -631,11 +595,10 @@ abstract contract Index is
         return address(new IndexLP(partnerProgram));
     }
 
-    function _taxation(uint256 amount, uint256 fee)
-        internal
-        pure
-        returns (uint256 amountWithoutTax, uint256 tax)
-    {
+    function _taxation(
+        uint256 amount,
+        uint256 fee
+    ) internal pure returns (uint256 amountWithoutTax, uint256 tax) {
         tax = (amount * fee) / (100 * PRECISION_E6);
         amountWithoutTax = amount - tax;
     }
@@ -654,19 +617,16 @@ abstract contract Index is
     }
 
     /// @notice we calculate the percentage of the issuer in byltrct
-    function _calcShare(uint256 percent, uint256 amount)
-        internal
-        pure
-        returns (uint256)
-    {
+    function _calcShare(
+        uint256 percent,
+        uint256 amount
+    ) internal pure returns (uint256) {
         return (amount * percent) / (100 * PRECISION_E6);
     }
 
-    function _reversArray(address[] memory array)
-        internal
-        pure
-        returns (address[] memory reversArray)
-    {
+    function _reversArray(
+        address[] memory array
+    ) internal pure returns (address[] memory reversArray) {
         uint256 len = array.length;
         reversArray = new address[](len);
         for (uint256 i; i <= len - 1; i++) {
@@ -675,11 +635,9 @@ abstract contract Index is
     }
 
     /// @notice calculating the cost of LP
-    function _calcCost(uint256 amountLP)
-        internal
-        view
-        returns (uint256 amountUSD)
-    {
+    function _calcCost(
+        uint256 amountLP
+    ) internal view returns (uint256 amountUSD) {
         uint256 len = _activeAssets.length;
         for (uint256 i; i < len; i++) {
             amountUSD += _getPrice(
@@ -687,14 +645,13 @@ abstract contract Index is
                 (_activeAssets[i].fixedAmount * amountLP) / PRECISION
             );
         }
-        amountUSD += (amountUSD * 10) / PRECISION_E6;
+        // amountUSD += (amountUSD * 10) / PRECISION_E6;
     }
 
-    function _getPrice(address[] memory path, uint256 amount)
-        public
-        view
-        returns (uint256)
-    {
+    function _getPrice(
+        address[] memory path,
+        uint256 amount
+    ) public view returns (uint256) {
         uint256[] memory amounts = IUniswapV2Router02(_adapter).getAmountsIn(
             amount,
             path

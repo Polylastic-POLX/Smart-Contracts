@@ -62,11 +62,10 @@ abstract contract DAOStandart is IDAOStandart, AccessControl {
      * @return true - user has already voted
      *         false - user has not voted yet
      */
-    function getVoteStatus(uint256 proposalId, address account)
-        external
-        view
-        returns (bool)
-    {
+    function getVoteStatus(
+        uint256 proposalId,
+        address account
+    ) external view returns (bool) {
         return _voteStatus[proposalId][account];
     }
 
@@ -74,11 +73,9 @@ abstract contract DAOStandart is IDAOStandart, AccessControl {
      * @dev returns inforamation about the proposal by ID
      * @return struct Proposal
      */
-    function getProposal(uint256 proposalId)
-        external
-        view
-        returns (Proposal memory)
-    {
+    function getProposal(
+        uint256 proposalId
+    ) external view returns (Proposal memory) {
         return _proposals[proposalId];
     }
 
@@ -103,13 +100,9 @@ abstract contract DAOStandart is IDAOStandart, AccessControl {
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override
-        returns (bool)
-    {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override returns (bool) {
         return
             interfaceId == type(IDAOStandart).interfaceId ||
             super.supportsInterface(interfaceId);
@@ -123,10 +116,15 @@ abstract contract DAOStandart is IDAOStandart, AccessControl {
             revert DAOAmountZero();
         }
 
+        // checking for commission inside the token
+        uint256 balanceBefore = IERC20(_voteToken).balanceOf(address(this));
         IERC20(_voteToken).safeTransferFrom(msg.sender, address(this), amount);
-        _users[msg.sender].balance += amount;
+        uint256 balanceAfter = IERC20(_voteToken).balanceOf(address(this));
+        uint256 newAmount = balanceAfter - balanceBefore;
 
-        emit Deposit(msg.sender, amount);
+        _users[msg.sender].balance += newAmount;
+
+        emit Deposit(msg.sender, newAmount);
     }
 
     /**
@@ -216,7 +214,7 @@ abstract contract DAOStandart is IDAOStandart, AccessControl {
         User storage user = _users[msg.sender];
 
         if (
-            block.timestamp > proposal.endTimeOfVoting ||
+            block.timestamp >= proposal.endTimeOfVoting ||
             block.timestamp < proposal.startTime ||
             proposal.votingStatus != VotingStatus.CREATE
         ) {
@@ -288,7 +286,7 @@ abstract contract DAOStandart is IDAOStandart, AccessControl {
 
         if (
             proposal.votedFor + proposal.votedAgainst >=
-            (_minimumQuorumPercent * IERC20(_voteToken).totalSupply()) / 100
+            (_minimumQuorumPercent * IERC20(_voteToken).totalSupply()) / (100 * PRECISION_E6)
         ) {
             if (proposal.votedFor > proposal.votedAgainst) {
                 proposal.votingStatus = VotingStatus.SUCCESSFULLY;

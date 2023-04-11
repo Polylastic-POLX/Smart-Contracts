@@ -1,13 +1,13 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.10;
+pragma solidity 0.8.10;
 pragma experimental ABIEncoderV2;
 
 interface IIndex {
     event Initialize(address adminDAO, address admin, address USD, address lp);
     event Rebalance(Asset[] assets, uint256 oldPrice, uint256 newPrice);
     event Init(Asset[] assets, uint256 indexPrice);
-    event Stake(address account, uint256 amountUSD, uint256 amountLP);
-    event Unstake(address account, uint256 amountLP);
+    event Stake(address indexed account, uint256 amountUSD, uint256 amountLP);
+    event Unstake(address indexed account, uint256 amountLP);
     event SetRebalancePeriod(uint256 period);
 
     event SetFeeUnStake(uint256 newFee);
@@ -75,22 +75,17 @@ interface IIndex {
      * @param path - Specify the path to exchange "_actualAcceptToken" to "_newAcceptToken".
      * The exchange will take place on quickSwap
      */
-    function rebalance(AssetData[] memory newAssets, address[] memory path)
-        external;
+    function rebalance(
+        AssetData[] memory newAssets,
+        address[] memory path
+    ) external;
 
     /**
      * @notice Buying an index
      * @param amountLP - The number of indexes that will be purchased
      * @param amountUSD - Number of tokens spent
-     * @param slippage - The percentage for which we can spend more "amountUSD".
-     * Required due to the variability of the sexes on DEX.
-     * In case of exceeding "amountUSD" + "slippage", the transaction is canceled
      */
-    function stake(
-        uint256 amountLP,
-        uint256 amountUSD,
-        uint256 slippage
-    ) external;
+    function stake(uint256 amountLP, uint256 amountUSD) external;
 
     /**
      * @notice Buying an index for ETH
@@ -104,7 +99,7 @@ interface IIndex {
     function unstake(uint256 amountLP) external;
 
     /// @notice Returns the pause state
-    /// @return status True - means that the operation of functions using the "suspended" modifier is stopped
+    /// @return status True - means that the operation of functions using the "isPause" modifier is stopped
     /// * False- means that the functions using the "isPause" modifier are working
     function getStatusPause() external view returns (bool status);
 
@@ -149,10 +144,9 @@ interface IIndex {
     /**
      * @notice Returns the LP price
      */
-    function getCostLP(uint256 amountLP)
-        external
-        view
-        returns (uint256 amountUSD);
+    function getCostLP(
+        uint256 amountLP
+    ) external view returns (uint256 amountUSD);
 
     /**
      * @notice Returns commissions

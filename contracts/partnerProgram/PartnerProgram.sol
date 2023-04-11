@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.10;
+pragma solidity 0.8.10;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "../extension/ExtensionReferralSystem.sol";
@@ -17,7 +17,6 @@ contract PartnerProgram is
 
     constructor(
         uint256[] memory percentReward,
-        address treasure,
         address daoAdmin
     ) {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);

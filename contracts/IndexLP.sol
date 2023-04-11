@@ -12,7 +12,6 @@ contract IndexLP is ERC20, IERC20BM, AccessControl {
         _setupRole(MINTER_ROLE, msg.sender);
         _setupRole(BURNER_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, partnerProgram);
-        _mint(address(this), 0);
     }
 
     function mint(address account, uint256 amount)

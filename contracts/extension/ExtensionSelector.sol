@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.10;
+pragma solidity 0.8.10;
 
 abstract contract ExtensionSelector {
     event Selector(bytes4 selector, bool status);

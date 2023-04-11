@@ -138,7 +138,6 @@ describe("1) Index Test (stake, unstake) #1)", () => {
     const percentReward = [0];
     pProgram = (await PartnerProgram.deploy(
       percentReward,
-      treasure.address,
       DAOAddress.address
     )) as PartnerProgram;
     index.deployed();
@@ -274,7 +273,7 @@ describe("1) Index Test (stake, unstake) #1)", () => {
 
     expect(
       await index.connect(adminAddress).getCostLP(utils.parseEther("1"))
-    ).eq("1000009692307965233"); // 1 MATIC
+    ).eq("999999692311042123"); // 1 MATIC
   });
 
   it("Stake Index", async function () {
@@ -286,20 +285,20 @@ describe("1) Index Test (stake, unstake) #1)", () => {
       .approve(index.address, "999999999999999999999999999999");
 
     const amountLP = utils.parseEther("1");
-
-    let cost = await index.getCostLP(amountLP);
+    const slippage = utils.parseUnits("0.1", 18);
+    let cost = await (await index.getCostLP(amountLP)).add(slippage);
     await index.connect(addr[2]).stakeETH(amountLP, { value: cost });
 
-    cost = await index.getCostLP(amountLP);
+    cost = (await index.getCostLP(amountLP)).add(slippage);
     await iWETH.connect(addr[2]).deposit({ value: cost });
-    await index.connect(addr[2]).stake(amountLP, cost, 6);
+    await index.connect(addr[2]).stake(amountLP, cost);
 
-    cost = await index.getCostLP(amountLP);
+    cost = (await index.getCostLP(amountLP)).add(slippage);
     await index.connect(addr[2]).stakeETH(amountLP, { value: cost });
 
-    cost = await index.getCostLP(amountLP);
+    cost = (await index.getCostLP(amountLP)).add(slippage);
     await iWETH.connect(addr[2]).deposit({ value: cost });
-    await index.connect(addr[2]).stake(amountLP, cost, 6);
+    await index.connect(addr[2]).stake(amountLP, cost);
     console.log("cost", cost);
 
     expect(await indexLP.balanceOf(addr[2].address)).eq(utils.parseEther("4"));
@@ -366,7 +365,9 @@ describe("1) Index Test (stake, unstake) #1)", () => {
   });
 
   it("stake, unstake", async function () {
-    expect(await index.getCostLP(utils.parseEther("1"))).eq("798096");
+    const slippage = utils.parseUnits("0.1", 6);
+
+    expect(await index.getCostLP(utils.parseEther("1"))).eq("798089");
 
     await index.connect(addr[2]).unstake(utils.parseEther("0.2"));
     expect(await indexLP.balanceOf(addr[2].address)).eq(
@@ -379,14 +380,14 @@ describe("1) Index Test (stake, unstake) #1)", () => {
     const amountLP = utils.parseEther("1");
 
     expect(await usdc.balanceOf(addr[2].address)).eq("2000158330");
-    let cost = await index.getCostLP(amountLP);
-    await index.connect(addr[2]).stake(amountLP, cost, 6);
-    expect(await usdc.balanceOf(addr[2].address)).eq("1999360463");
+    let cost = (await index.getCostLP(amountLP)).add(slippage);
+    await index.connect(addr[2]).stake(amountLP, cost);
+    expect(await usdc.balanceOf(addr[2].address)).eq("1999360470");
     expect(await indexLP.balanceOf(addr[2].address)).eq(
       utils.parseEther("4.6")
     );
 
-    cost = await index.getCostLP(amountLP);
+    cost = (await index.getCostLP(amountLP)).add(slippage);
     await expect(
       index.connect(addr[2]).stakeETH(amountLP, { value: cost })
     ).revertedWith("The current accepted token is not ETH");

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.10;
+pragma solidity 0.8.10;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -74,13 +74,11 @@ contract FactoryCommunity is AccessControl, IFactory {
         emit Mint(instance);
     }
 
-    function changeIndexMaster(address newIndexMaster)
-        external
-        onlyRole(DAO_ADMIN_ROLE)
-    {
-        _indexMaster = newIndexMaster;
-
+    function changeIndexMaster(
+        address newIndexMaster
+    ) external onlyRole(DAO_ADMIN_ROLE) {
         emit ChangeIndexMaster(_indexMaster, newIndexMaster);
+        _indexMaster = newIndexMaster;
     }
 
     function changeMainParam(
@@ -100,8 +98,9 @@ contract FactoryCommunity is AccessControl, IFactory {
         _rebalancePeriod = rebalancePeriod;
         _tresuare = tresuare;
 
-        emit ChangeMainParam(
+        emit ChangeMainParamCommunity(
             DAOAdminAddress,
+            DAOACommAddress,
             validator,
             USD,
             adapter,
@@ -143,13 +142,9 @@ contract FactoryCommunity is AccessControl, IFactory {
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override
-        returns (bool)
-    {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override returns (bool) {
         return
             interfaceId == type(IFactory).interfaceId ||
             super.supportsInterface(interfaceId);

@@ -151,7 +151,6 @@ describe("2) Index Test (rebalance) #1)", () => {
     const percentReward = [10000000]; // 10%
     pProgram = (await PartnerProgram.deploy(
       percentReward,
-      treasure.address,
       daoAdmin.address
     )) as PartnerProgram;
 
@@ -250,7 +249,7 @@ describe("2) Index Test (rebalance) #1)", () => {
 
     expect(
       await index.connect(adminAddress).getCostLP(utils.parseEther("1"))
-    ).eq("5000050");
+    ).eq("5000000");
   });
 
   it("Stake Index", async function () {
@@ -263,7 +262,7 @@ describe("2) Index Test (rebalance) #1)", () => {
       .approve(index.address, utils.parseEther("1000"));
     await index
       .connect(addr[1])
-      .stake(amountLP, await index.getCostLP(amountLP), 0);
+      .stake(amountLP, await index.getCostLP(amountLP));
 
     amountLP = amountLP.div(2);
     await usdc
@@ -271,7 +270,7 @@ describe("2) Index Test (rebalance) #1)", () => {
       .approve(index.address, utils.parseEther("1000"));
     await index
       .connect(addr[2])
-      .stake(amountLP, await index.getCostLP(amountLP), 0);
+      .stake(amountLP, await index.getCostLP(amountLP));
 
     expect(await weth.balanceOf(index.address)).closeTo(
       utils.parseEther("0.000855"),

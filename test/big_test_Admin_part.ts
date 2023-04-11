@@ -137,7 +137,6 @@ describe("1) big_test_Admin_part #1)", () => {
       const percentReward = [10000000];
       pProgram = (await PartnerProgram.deploy(
         percentReward,
-        treasure.address,
         daoAdmin.address
       )) as PartnerProgram;
     });
@@ -493,7 +492,7 @@ describe("1) big_test_Admin_part #1)", () => {
 
       expect(
         await index.connect(validator).getCostLP(utils.parseEther("1"))
-      ).eq("1000010");
+      ).eq("1000000");
     });
 
     it("pProgram setReferrer", async function () {
@@ -520,7 +519,7 @@ describe("1) big_test_Admin_part #1)", () => {
 
       await index
         .connect(addr[1])
-        .stake(amountLP, await index.getCostLP(amountLP), 0);
+        .stake(amountLP, await index.getCostLP(amountLP));
 
       expect(await indexLP.balanceOf(treasure.address)).eq(
         utils.parseEther("0")
@@ -537,7 +536,7 @@ describe("1) big_test_Admin_part #1)", () => {
 
       await index
         .connect(addr[2])
-        .stake(amountLP, await index.getCostLP(amountLP), 0);
+        .stake(amountLP, await index.getCostLP(amountLP));
 
       expect(await indexLP.balanceOf(treasure.address)).eq(
         utils.parseEther("0")
@@ -554,7 +553,7 @@ describe("1) big_test_Admin_part #1)", () => {
 
       await index
         .connect(addr[3])
-        .stake(amountLP, await index.getCostLP(amountLP), 0);
+        .stake(amountLP, await index.getCostLP(amountLP));
 
       expect(await indexLP.balanceOf(treasure.address)).eq(
         utils.parseEther("0")
@@ -574,7 +573,7 @@ describe("1) big_test_Admin_part #1)", () => {
 
       expect(
         await index.connect(validator).getCostLP(utils.parseEther("1"))
-      ).eq("1006161");
+      ).eq("1006151");
     });
   });
 

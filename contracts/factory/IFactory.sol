@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.0;
+pragma solidity 0.8.10;
 pragma experimental ABIEncoderV2;
 
 interface IFactory {
@@ -7,6 +7,15 @@ interface IFactory {
     event Mint(address instance);
     event ChangeMainParam(
         address DAOAddress,
+        address validator,
+        address USD,
+        address adapter,
+        address tresuare,
+        uint256 rebalancePeriod
+    );
+    event ChangeMainParamCommunity(
+        address DAOAdminAddress,
+        address DAOCommunityAddress,
         address validator,
         address USD,
         address adapter,
