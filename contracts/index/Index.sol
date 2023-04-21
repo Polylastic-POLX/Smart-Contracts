@@ -172,17 +172,12 @@ abstract contract Index is
     /**
      * @notice Buying an index
      * @param amountLP - The number of indexes that will be purchased
-     * @param amountUSD - Number of tokens spent
+     * @param amountUSD - Number of tokens spent + slippage
      */
     function stake(
         uint256 amountLP,
         uint256 amountUSD
-    )
-        external
-        // uint256 slippage
-        isZeroAmount(amountLP)
-        isPause
-    {
+    ) external isZeroAmount(amountLP) isPause {
         // debiting tokens from the user to the contract
         IERC20(_actualAcceptToken).safeTransferFrom(
             msg.sender,
@@ -195,6 +190,7 @@ abstract contract Index is
 
     /**
      * @notice Buying an index for ETH
+     * @dev msg.value - Number of tokens spent + slippage
      * @param amountLP The number of indexes that will be purchased
      */
     function stakeETH(
@@ -227,7 +223,7 @@ abstract contract Index is
     }
 
     /// @notice Returns the pause state
-    /// @return status True - means that the operation of functions using the "suspended" modifier is stopped.
+    /// @return status True - means that the operation of functions using the "isPause" modifier is stopped.
     /// * False- means that the functions using the "isPause" modifier are working
 
     function getStatusPause() external view returns (bool status) {
@@ -400,7 +396,7 @@ abstract contract Index is
         _amountTax += tax;
 
         uint256 stakeCost = _calcStake(amountLP);
-        require(deposit >= stakeCost, "invalidCost");
+        require(deposit >= stakeCost && stakeCost != 0, "InvalidCost");
         _ipartnerProgram.distributeTheReward(msg.sender, amountLP, _indexLP);
 
         IndexLP(_indexLP).mint(msg.sender, amountLPWithoutTax);
@@ -412,6 +408,7 @@ abstract contract Index is
             IERC20(_actualAcceptToken).safeTransfer(msg.sender, refundAmount);
         } else {
             IWETH(_wETH).withdraw(refundAmount);
+            msg.sender.call{value: refundAmount}("");
         }
 
         emit Stake(msg.sender, stakeCost, amountLPWithoutTax);

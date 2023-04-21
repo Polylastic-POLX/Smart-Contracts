@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.10;
+pragma solidity 0.8.10;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -286,7 +286,8 @@ abstract contract DAOStandart is IDAOStandart, AccessControl {
 
         if (
             proposal.votedFor + proposal.votedAgainst >=
-            (_minimumQuorumPercent * IERC20(_voteToken).totalSupply()) / (100 * PRECISION_E6)
+            (_minimumQuorumPercent * IERC20(_voteToken).totalSupply()) /
+                (100 * PRECISION_E6)
         ) {
             if (proposal.votedFor > proposal.votedAgainst) {
                 proposal.votingStatus = VotingStatus.SUCCESSFULLY;
@@ -301,7 +302,7 @@ abstract contract DAOStandart is IDAOStandart, AccessControl {
 
     function _finishValidation(Proposal memory proposal) internal view {
         require(
-            proposal.endTimeOfVoting < block.timestamp,
+            proposal.endTimeOfVoting + 60 < block.timestamp,
             "DAO: It is impossible to complete now"
         );
 

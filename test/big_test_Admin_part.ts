@@ -243,7 +243,7 @@ describe("1) big_test_Admin_part #1)", () => {
       await daoAdmin.connect(addr[2]).vote(1, true);
       await daoAdmin.connect(addr[3]).vote(1, true);
 
-      await shiftTime(3600 * 23);
+      await shiftTime(3600 * 23 + 60);
 
       let DAOParam = await daoAdmin.getDAOParam();
       await expect(DAOParam[0]).eq((3).toString());
@@ -265,7 +265,7 @@ describe("1) big_test_Admin_part #1)", () => {
 
       await daoAdmin.connect(addr[1]).vote(2, true);
 
-      await shiftTime(3600 * 23);
+      await shiftTime(3600 * 23 + 60);
 
       daoAdmin.isWhiteList(addr[7].address);
       await expect(await daoAdmin.isWhiteList(addr[7].address)).eq(false);
@@ -288,7 +288,7 @@ describe("1) big_test_Admin_part #1)", () => {
 
       await daoAdmin.connect(addr[1]).vote(3, true);
 
-      await shiftTime(3600 * 23);
+      await shiftTime(3600 * 23 + 60);
 
       daoAdmin.isWhiteList(addr[7].address);
       await expect(await daoAdmin.isWhiteList(addr[7].address)).eq(true);
@@ -304,7 +304,7 @@ describe("1) big_test_Admin_part #1)", () => {
       const startTime = (await getNodeTime()) + 1;
       await daoAdmin.connect(addr[1]).addPoll(startTime);
 
-      await shiftTime(3600 * 23);
+      await shiftTime(3600 * 23 + 60);
 
       await daoAdmin.connect(addr[1]).finishVote(4);
       const props = await daoAdmin.getProposal(4);
@@ -366,7 +366,7 @@ describe("1) big_test_Admin_part #1)", () => {
 
       await daoAdmin.connect(addr[1]).vote(6, true);
 
-      await shiftTime(3600 * 23);
+      await shiftTime(3600 * 23 + 60);
 
       await daoAdmin.connect(addr[1]).finishVote(6);
 
