@@ -49,6 +49,7 @@ abstract contract Index is
 
     bool private _initializer;
     bool _init;
+    uint256 public _slippage;
 
     IPartnerProgram private _ipartnerProgram;
 
@@ -126,6 +127,13 @@ abstract contract Index is
         emit SetActualToken(newToken);
     }
 
+    function setSlippage(uint256 slippage) external onlyRole(DAO_ADMIN_ROLE) {
+        require(slippage <= PRECISION_E6 * 10, "Invalid fee");
+        _slippage = slippage;
+
+        emit SetSlippage(slippage);
+    }
+
     /**
      * @notice Setting the initial assets in the index
      */
@@ -147,7 +155,8 @@ abstract contract Index is
      */
     function rebalance(
         AssetData[] memory newAssets,
-        address[] memory path
+        address[] memory path,
+        uint256 calculatedPrice
     ) external onlyRole(ADMIN_ROLE) {
         require(
             block.timestamp > _lastRebalance + _rebalancePeriod,
@@ -159,12 +168,21 @@ abstract contract Index is
         if (_actualAcceptToken != _newAcceptToken) {
             usdAmount = _changeActualToken(usdAmount, path); //replacement of the accepted token from the user
         }
-        if (usdAmount == 0) {
-            usdAmount = oldPrice;
-        }
+
         // we exchange USD for assets included in the index
         _rebalance(newAssets, usdAmount);
         uint256 newPrice = _calcCost(1e18);
+
+        uint256 discrepancy;
+        if (calculatedPrice >= newPrice)
+            discrepancy = calculatedPrice - newPrice;
+        else discrepancy = newPrice - calculatedPrice;
+
+        uint v = (_slippage * calculatedPrice) / (100 * PRECISION_E6);
+
+        if (v < discrepancy) {
+            revert RebalancePrice(calculatedPrice, newPrice);
+        }
 
         emit Rebalance(_activeAssets, oldPrice, newPrice);
     }
@@ -208,13 +226,16 @@ abstract contract Index is
     /**
      * @notice Selling the LP
      */
-    function unstake(uint256 amountLP) external isZeroAmount(amountLP) {
+    function unstake(
+        uint256 amountLP,
+        uint256 minAmount
+    ) external isZeroAmount(amountLP) {
         (uint256 amountLPWithoutTax, uint256 tax) = _taxation(
             amountLP,
             _feeUnstake
         ); // calculation of the withdrawal fee
         _amountTax += tax;
-        _unstake(amountLPWithoutTax);
+        _unstake(amountLPWithoutTax, minAmount);
 
         IndexLP(_indexLP).burn(msg.sender, amountLP); // burning LP
         IndexLP(_indexLP).mint(_treasure, tax); // mint the tax to the treasure
@@ -515,7 +536,7 @@ abstract contract Index is
     }
 
     /// @notice we exchange assets for USD to send them to the user
-    function _unstake(uint256 amountLP) internal {
+    function _unstake(uint256 amountLP, uint256 minAmount) internal {
         uint256 len = _activeAssets.length;
         uint256 sum;
 
@@ -529,6 +550,9 @@ abstract contract Index is
             sum += amount;
         }
         IERC20(_actualAcceptToken).safeTransfer(msg.sender, sum);
+        if (minAmount > sum) {
+            revert InvalidMinAmount(minAmount, sum);
+        }
     }
 
     /// @notice  exchange the user's USD for the assets included in the index

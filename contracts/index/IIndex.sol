@@ -11,6 +11,7 @@ interface IIndex {
     event SetRebalancePeriod(uint256 period);
 
     event SetFeeUnStake(uint256 newFee);
+    event SetSlippage(uint256 newSlippage);
     event SetFeeStake(uint256 newFee);
     event SetActualToken(address newActualToken);
     event SetName(string name);
@@ -18,6 +19,8 @@ interface IIndex {
     error ZeroAmount();
     error InvalidStake();
     error Initializer();
+    error RebalancePrice(uint256 priceAdmin, uint256 priceSM);
+    error InvalidMinAmount(uint256 minAmount, uint256 amount);
 
     error InvalidAsset(address asset);
 
@@ -77,7 +80,8 @@ interface IIndex {
      */
     function rebalance(
         AssetData[] memory newAssets,
-        address[] memory path
+        address[] memory path,
+        uint256 calculatedPrice
     ) external;
 
     /**
@@ -96,7 +100,7 @@ interface IIndex {
     /**
      * @notice Selling the index
      */
-    function unstake(uint256 amountLP) external;
+    function unstake(uint256 amountLP, uint256 minAmount) external;
 
     /// @notice Returns the pause state
     /// @return status True - means that the operation of functions using the "isPause" modifier is stopped

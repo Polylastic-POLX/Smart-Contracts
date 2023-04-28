@@ -141,15 +141,6 @@ describe("1)  Test PartnerProgram #1)", () => {
       pProgram.connect(addr[1]).setReferrer(addr[2].address)
     ).revertedWith("You have referrer");
 
-    console.log(
-      "balanceOf(addr[1].address=",
-      await indexLP.balanceOf(addr[1].address)
-    );
-    console.log(
-      "balanceOf(addr[2].address=",
-      await indexLP.balanceOf(addr[2].address)
-    );
-
     await pProgram
       .connect(IndexAddr)
       .distributeTheReward(
@@ -157,15 +148,5 @@ describe("1)  Test PartnerProgram #1)", () => {
         utils.parseEther("100"),
         indexLP.address
       );
-
-    console.log(
-      "balanceOf(addr[2].address=",
-      await indexLP.balanceOf(addr[2].address)
-    );
-    console.log(
-      "balanceOf(addr[3].address=",
-      await indexLP.balanceOf(addr[3].address)
-    );
-    console.log("balanceOf(owner=", await indexLP.balanceOf(owner.address));
   });
 });

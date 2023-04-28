@@ -54,6 +54,19 @@ const AKTAddr = "0xf14fbC6B30e2c4BC05A1D4fbE34bf9f14313309D";
 const ALPHAaddr = "0x6a3E7C3c6EF65Ee26975b12293cA1AAD7e1dAeD2";
 
 describe("1) big_test_Admin_part #1)", () => {
+  it("Hardhat_reset", async function () {
+    await network.provider.request({
+      method: "hardhat_reset",
+      params: [
+        {
+          forking: {
+            jsonRpcUrl: process.env.ALCHEMY_API_HTTP,
+            blockNumber: 31192878,
+          },
+        },
+      ],
+    });
+  });
   describe("Deploy: PLX, DAOAdmin, Treasure, IndexAdmin_Master, FactoryAdmin", () => {
     it("Deploy PLX", async function () {
       addr = await ethers.getSigners();
@@ -573,7 +586,7 @@ describe("1) big_test_Admin_part #1)", () => {
 
       expect(
         await index.connect(validator).getCostLP(utils.parseEther("1"))
-      ).eq("1006151");
+      ).eq("1005451");
     });
   });
 
@@ -657,9 +670,6 @@ describe("1) big_test_Admin_part #1)", () => {
       expect(props[1]).eq(2);
       const len = (await index.lengthNewAssets()).toString();
       expect(len).eq("5");
-      // let data = await index.getNewAssets();
-      // console.log(data)
-      // expect(data).eq(assets)
     });
 
     it("addProposal (setPause)", async function () {

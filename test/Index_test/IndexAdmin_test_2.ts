@@ -309,7 +309,12 @@ describe("2) Index Test (rebalance) #1)", () => {
 
     await shiftTime(3600 * 24);
     const path = [usdcAddr, usdcAddr];
-    await index.connect(adminAddress).rebalance(assets, path);
-    // console.log(await index.getActiveAssets());
+    let priceSM;
+    try {
+      await index.connect(adminAddress).callStatic.rebalance(assets, path, 0);
+    } catch (error) {
+      priceSM = error.errorArgs.priceSM;
+    }
+    await index.connect(adminAddress).rebalance(assets, path, priceSM);
   });
 });

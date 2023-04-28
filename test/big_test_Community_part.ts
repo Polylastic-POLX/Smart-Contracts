@@ -41,16 +41,9 @@ let indexMaster: IndexCommunity;
 let treasure: Treasure;
 let factoryCommunity: FactoryCommunity;
 let pProgram: PartnerProgram;
-
 let validator: any;
 
-// const adapter = "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff";
-// const usdcAddr = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174";
-// const WETHAddr = "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619";
-// const BNBAddr = "0x5c4b7CCBF908E64F32e12c6650ec0C96d717f03F";
-// const WMATICAddr = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
-// const GHSTAddr = "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7";
-// let arrIndexes: any;
+
 describe("1) Big test Community #2)", () => {
   describe("Deploy: PLX, DAOAdmin, Treasure, IndexCommunity_Master, FactoryAdmin", () => {
     it("Deploy PLX", async function () {

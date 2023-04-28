@@ -52,7 +52,7 @@ let pProgram: PartnerProgram;
 let DAOAddress: any;
 let adminAddress: any;
 
-describe("1) Index Test (stake, unstake) #1)", () => {
+describe("1) New Test", () => {
   it("Hardhat_reset", async function () {
     await network.provider.request({
       method: "hardhat_reset",
@@ -282,7 +282,6 @@ describe("1) Index Test (stake, unstake) #1)", () => {
   });
 
   it("Stake", async function () {
-    console.log("balanceOf", await usdc.balanceOf(index.address));
     const amountUSD = ethers.utils.parseUnits("1", 6);
     const slippage = ethers.utils.parseUnits("1", 4);
     await usdc.connect(addr[2]).approve(index.address, 100 * 1e6);
@@ -294,13 +293,10 @@ describe("1) Index Test (stake, unstake) #1)", () => {
     await index
       .connect(addr[2])
       .stake(utils.parseEther("1"), amountUSD.add(slippage));
-    console.log("balanceOf", await usdc.balanceOf(index.address));
   });
 
   it("unstake", async function () {
-    await index.connect(addr[2]).unstake(utils.parseEther("1"));
-
-    console.log("balanceOf", await usdc.balanceOf(index.address));
+    await index.connect(addr[2]).unstake(utils.parseEther("1"), 0);
   });
 
   it("rebalance", async function () {
@@ -373,27 +369,16 @@ describe("1) Index Test (stake, unstake) #1)", () => {
         share: "20000000",
       },
     ];
-    console.log("1polx", await polx.balanceOf(index.address));
-    console.log("1matic", await matic.balanceOf(index.address));
-
-    console.log("getCostLP", await index.getCostLP(utils.parseEther("1")));
 
     await shiftTime(7200);
-    await index.connect(adminAddress).rebalance(assets, []);
-    console.log("getCostLP", await index.getCostLP(utils.parseEther("1")));
-    console.log("2polx", await polx.balanceOf(index.address));
-    console.log("2matic", await matic.balanceOf(index.address));
+    let priceSM;
+    try {
+      await index.connect(adminAddress).callStatic.rebalance(assets, [], 0);
+    } catch (error) {
+      priceSM = error.errorArgs.priceSM;
+    }
+    await index.connect(adminAddress).rebalance(assets, [], priceSM);
 
-    await index.connect(addr[2]).unstake(utils.parseEther("1"));
-
-    console.log("3polx", await polx.balanceOf(index.address));
-    console.log("3matic", await matic.balanceOf(index.address));
-    // await mv
-    // await sand
-    // await astrafer
-    // await welt
-    // await fyn
-    // await tel
-    // await usdc
+    await index.connect(addr[2]).unstake(utils.parseEther("1"), "983586");
   });
 });

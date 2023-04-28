@@ -90,39 +90,6 @@ describe("1) Index Test (stake, unstake) #1)", () => {
     await polx.transfer(addr[3].address, amount);
   });
 
-  // it("Deploy DAOAdmin", async function () {
-
-  //     const [
-  //         DAOAdmin,
-  //     ] = await Promise.all([
-  //         ethers.getContractFactory('DAOAdmin'),
-  //     ])
-
-  //     let minimumQuorumPercent = 3
-  //     let debatingPeriodDuration = 3600 * 24;
-  //     let whiteList = [addr[1].address, addr[2].address, addr[3].address, addr[4].address, addr[5].address]
-  //     let selectors = [
-  //         '0x4d148673',       //changePeriodDuration
-  //         '0x00c2af11',       //changeMinimumQuorumPercent
-  //         '0x4eb647bc',       // setMinimumQuorumPercent
-  //         '0x7c2d6e01',       // setPeriodDuration
-  //         '0xd7a1284a',       //addSelector
-  //         '0x67fc22c6',       //removeSelector
-  //         '0x9c54df64',       //addAdmins
-  //         '0x377e11e0',       //removeAdmins
-  //         '0xd5da6173',       //setMaxShare
-  //         '0xc45618f5',       //setFeeStake
-  //         '0x99331510',       //setFeeUnStake
-  //         '0xdc53e5cf',       //setRebalancePeriod
-  //         '0xbb9cd698',       //newIndexComposition
-  //         '0xd431b1ac'        // setPause
-  //     ]
-
-  //     whiteList = [addr[1].address, addr[2].address, addr[3].address, addr[4].address, addr[5].address]
-  //     daoAdmin = await DAOAdmin.deploy(polx.address, minimumQuorumPercent, debatingPeriodDuration, whiteList, selectors) as DAOAdmin;
-  //     await polx.setBridgeContractAddress(daoAdmin.address)
-
-  // })
   it("Deploy IndexAdmin Treasure PartnerProgram", async function () {
     addr = await ethers.getSigners();
     DAOAddress = addr[10];
@@ -299,13 +266,14 @@ describe("1) Index Test (stake, unstake) #1)", () => {
     cost = (await index.getCostLP(amountLP)).add(slippage);
     await iWETH.connect(addr[2]).deposit({ value: cost });
     await index.connect(addr[2]).stake(amountLP, cost);
-    console.log("cost", cost);
 
     expect(await indexLP.balanceOf(addr[2].address)).eq(utils.parseEther("4"));
   });
 
   it("Unstake Index", async function () {
-    await index.connect(addr[2]).unstake(utils.parseEther("0.2"));
+    await index
+      .connect(addr[2])
+      .unstake(utils.parseEther("0.2"), utils.parseEther("0.199"));
     expect(await indexLP.balanceOf(addr[2].address)).eq(
       utils.parseEther("3.8")
     );
@@ -358,10 +326,26 @@ describe("1) Index Test (stake, unstake) #1)", () => {
       },
     ];
     const path = [wMATICaddr, usdcAddr];
+    let priceSM;
+    try {
+      await index.connect(adminAddress).callStatic.rebalance(assets, path, 0);
+    } catch (error) {
+      priceSM = error.errorArgs.priceSM;
+    }
+    await index.connect(addr[10]).setSlippage(1e6 * 10);
 
-    await index.connect(adminAddress).rebalance(assets, path);
-
-    // console.log(await index.getActiveAssets());
+    let priceSubPercent = ethers.BigNumber.from(priceSM).mul(89).div(100);
+    console.log("_____!____");
+    await expect(
+      index.connect(adminAddress).rebalance(assets, path, priceSubPercent)
+    ).revertedWith("RebalancePrice");
+    console.log("_____2____");
+    priceSubPercent = ethers.BigNumber.from(priceSM).mul(121).div(100);
+    await expect(
+      index.connect(adminAddress).rebalance(assets, path, priceSubPercent)
+    ).revertedWith("RebalancePrice");
+    console.log("_____3____");
+    await index.connect(adminAddress).rebalance(assets, path, priceSM);
   });
 
   it("stake, unstake", async function () {
@@ -369,7 +353,7 @@ describe("1) Index Test (stake, unstake) #1)", () => {
 
     expect(await index.getCostLP(utils.parseEther("1"))).eq("798089");
 
-    await index.connect(addr[2]).unstake(utils.parseEther("0.2"));
+    await index.connect(addr[2]).unstake(utils.parseEther("0.2"), "158330");
     expect(await indexLP.balanceOf(addr[2].address)).eq(
       utils.parseEther("3.6")
     );
@@ -436,14 +420,14 @@ describe("1) Index Test (stake, unstake) #1)", () => {
       },
     ];
     const path = [wMATICaddr, usdcAddr];
-
-    await index.connect(adminAddress).rebalance(assets, path);
-
-    // console.log(await index.getActiveAssets());
-
-    await index
-      .connect(addr[2])
-      .unstake(await indexLP.balanceOf(addr[2].address));
-    console.log("totalSupply=", await indexLP.totalSupply());
+    let priceSM;
+    try {
+      await index.connect(adminAddress).callStatic.rebalance(assets, path, 0);
+    } catch (error) {
+      priceSM = error.errorArgs.priceSM;
+    }
+    await index.connect(adminAddress).rebalance(assets, path, priceSM);
+    const balanceLP = await indexLP.balanceOf(addr[2].address);
+    await index.connect(addr[2]).unstake(balanceLP, "3608478");
   });
 });
