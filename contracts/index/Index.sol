@@ -127,6 +127,11 @@ abstract contract Index is
         emit SetActualToken(newToken);
     }
 
+    /**
+     * The _slippage parameter is needed when calling the rebalance function.
+     * To compare the cost of 1LP calculated on the backend side and the smart contract
+     * @dev Enter data taking into account precision.
+     */
     function setSlippage(uint256 slippage) external onlyRole(DAO_ADMIN_ROLE) {
         require(slippage <= PRECISION_E6 * 10, "Invalid fee");
         _slippage = slippage;

@@ -231,9 +231,8 @@ abstract contract DAOStandart is IDAOStandart, AccessControl {
 
         _voteStatus[proposalId][msg.sender] = true;
 
-        // adding a minute is necessary for the inability to make an attack (flash loan)
-        if (user.unlockBalance < proposal.endTimeOfVoting + 1 minutes) {
-            user.unlockBalance = proposal.endTimeOfVoting + 1 minutes;
+        if (user.unlockBalance < proposal.endTimeOfVoting) {
+            user.unlockBalance = proposal.endTimeOfVoting;
         }
 
         emit Vote(msg.sender, proposalId, supportAgainst, powerOfVoting);
@@ -303,7 +302,7 @@ abstract contract DAOStandart is IDAOStandart, AccessControl {
 
     function _finishValidation(Proposal memory proposal) internal view {
         require(
-            proposal.endTimeOfVoting < block.timestamp,
+            proposal.endTimeOfVoting <= block.timestamp,
             "DAO: It is impossible to complete now"
         );
 

@@ -335,16 +335,13 @@ describe("1) Index Test (stake, unstake) #1)", () => {
     await index.connect(addr[10]).setSlippage(1e6 * 10);
 
     let priceSubPercent = ethers.BigNumber.from(priceSM).mul(89).div(100);
-    console.log("_____!____");
     await expect(
       index.connect(adminAddress).rebalance(assets, path, priceSubPercent)
     ).revertedWith("RebalancePrice");
-    console.log("_____2____");
     priceSubPercent = ethers.BigNumber.from(priceSM).mul(121).div(100);
     await expect(
       index.connect(adminAddress).rebalance(assets, path, priceSubPercent)
     ).revertedWith("RebalancePrice");
-    console.log("_____3____");
     await index.connect(adminAddress).rebalance(assets, path, priceSM);
   });
 
